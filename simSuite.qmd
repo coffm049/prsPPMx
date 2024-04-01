@@ -1,0 +1,134 @@
+
+# Simulation
+```{python setup}
+#| include: false
+#| output: false
+#| message: false
+
+from ctypes import CDLL 
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import statsmodels.api as sm
+from xarray import DataArray
+import pandas_plink as pdplink
+import os
+
+try : 
+  os.chdir("../../Stat_gen/tools/MASH")
+  from Simulate.simulation_helpers.Sim_generator import pheno_simulator
+  from Simulate.summarizers.genotype_viz import plotClusters
+  # from Simulate.summarizers.genotype_viz import plotClusters
+  os.chdir("../../../Integrative/prsPPMx/")
+except NameError :
+  print("Already loaded appropriate modules")
+
+
+def simulate_data(nSNPs=1000, nsubjects=500, nclusts=1, nphenos=2, shared=0.5, prop_causal=[0.25, 0.25], theta_alleles=[0.95, 0.25], h2Hom=0.8, h2Het=[0.1, 0.1]):
+   sim = pheno_simulator(nsubjects=nsubjects, nSNPs=nSNPs)
+   sim.sim_sites()
+   sim.sim_pops(nclusts=nclusts, theta_alleles=theta_alleles, shared=shared)
+   sim.sim_genos()
+   sim.sim_pheno(h2Hom=h2Hom, h2Het=h2Het, nphenos=nphenos, prop_causal=prop_causal, alpha=-1)
+   sim.save_plink()
+```
+
+
+```{python}
+rng = np.random.default_rng(12)
+simulate_data(nSNPs=1000, nsubjects=500, nclusts=2, nphenos=2, shared=0.5, prop_causal=[0.25, 0.25], theta_alleles=[0.95, 0.25], h2Hom=0.8, h2Het=[0.1, 0.1])
+```
+
+
+```{bash}
+plink --bfile temp/simulation --r2 --out temp/simulation 
+
+plink2 --bfile temp/simulation --glm --out temp/simulation --covar temp/simulation.covar
+awk -F'\t' 'NR==1 || $7 == "ADD" {print}' temp/simulation.PHENO1.glm.linear > temp/simulation.PHENO1.glm.linear.filtered
+awk '{$7=""; print $0}' temp/simulation.fam > temp/simulation.fam2
+mv temp/simulation.fam2 temp/simulation.fam
+PRSice_linux --base temp/simulation.PHENO1.glm.linear.filtered --no-regress --score avg --target temp/simulation --out temp/simulation --A1 REF --stat BETA --snp ID --bp POS --pvalue P --keep-ambig
+```
+
+```{python}
+import magenpy as mgp
+import viprs as vp
+
+
+# Load genotype and GWAS summary statistics data (chromosome 22):
+gdl = mgp.GWADataLoader(bed_files=mgp.tgp_eur_data_path(),
+                        sumstats_files=mgp.ukb_height_fastGWA_path(),
+                        sumstats_format="fastGWA")
+```
+
+# ppmx fits
+```{r setupr}
+#| include: false
+
+library(bigsnpr) 
+library(ppmSuite)
+library(tidyverse)
+library(ggfortify)
+library(gt)
+library(patchwork)
+library(gtsummary)
+
+
+ppmxsummary <- function(mod, df, ...) {
+  df$predicted <- apply(mod$fitted.values, 2, mean)
+  labelings <- t(mod$si)
+  df$label <- as.data.frame(sapply(1:max(mod$si), function(x) rowmeans(labelings ==x)),
+                            col.names = c("l1", "l2", "l3"))  %>%
+             mutate(label = max.col(., ties.method = "first")) %>%
+             pull(label) %>%
+             as.factor()
+  g <- df %>%
+    ggplot(aes(!!!ensyms(...))) +
+    geom_point() +
+    geom_point(aes(y = predicted), color = "red") 
+  print(g)
+ 
+  table(df[c("label", "subgroup", "subj_ancestries")])
+}
+
+meanmodel = 1
+m=1e-30
+similarity_function = 1
+draws = 2000
+burn = 500
+thin = 10
+
+# read plink data in R
+
+df <- snpStats::read.plink("test2")
+
+# load datafraem
+df <- read_csv("data2anc.csv")  %>%
+  mutate(y0 = (y0 - mean(y0))/ sd(y0),
+         y1 = (y1 - mean(y1)) / sd(y1),
+         prs0 = (prs0 - mean(prs0)) / sd(prs0),
+         prs1 = (prs1 - mean(prs1)) / sd(prs1), 
+         pc_1 = (pc_1 - mean(pc_1)) / sd(pc_1),
+         y1_pc = lm(y1 ~ pc_1, data= .)$resid,
+         prs1_pc = lm(prs1 ~ pc_1, data= .)$resid,
+         subgroup = 1
+         )
+```
+
+## fully separable
+```{r}
+# fully separable: no confounding - 
+m1 = gaussian_ppmx(y = df$y1, x = df[c("prs1", "pc_1")], meanmodel = meanmodel, m = m, similarity_function = similarity_function, draws = draws, burn = burn, thin = thin)
+ppmxsummary(m1, df, x ="prs1", y= "y1")
+```
+
+
+## pc residualized
+residualize out confounding affect
+```{r}
+m2 = gaussian_ppmx(y = df$y1_pc, x = df[c("prs1_pc")], meanmodel = meanmodel, m = m, similarity_function = similarity_function, draws = draws, burn = burn, thin = thin)
+ppmxsummary(m2, df, x ="prs1_pc", y= "y1_pc")
+```
+doesn't detect subtypes
+
