@@ -70,8 +70,8 @@ runSims <- function(meanModel = 1, M=1e-20, similarity_function = 1, draws = 200
     df <- loadSim(filepath = out)
     m1 = ppmSuite::gaussian_ppmx(y = df$Z, X = df[c("PRS0", "PRS1", "PRS2", "PRS3", "PRS4", "PC1", "Confound")], draws = draws, burn = burn, thin = thin, M = M, meanModel= meanModel,similarity_function=similarity_function )
     m2 = ppmSuite::gaussian_ppmx(y = df$Z_pc, X = df[c("PRS0_pc", "PRS1_pc", "PRS2_pc","PRS3_pc", "PRS4_pc")], meanModel = meanModel, M = M, similarity_function = similarity_function, draws = draws, burn = burn, thin = thin)
-    ppmxsummary(m1, df,proj = F, x ="PC1", y= "Z")
-    ppmxsummary(m2, df, x ="PRS1_pc", y= "Z_pc", proj =T)
+    m1 <- ppmxsummary(m1, df,proj = F, x ="PC1", y= "Z")
+    m2 <- ppmxsummary(m2, df, x ="PRS1_pc", y= "Z_pc", proj =T)
     results <- rbind(m1, m2)
     write.table(results, file = paste0(out, ".results"), sep = "\t", row.names = F, append = T)
 }
