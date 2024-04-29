@@ -1,1 +1,16 @@
-Test estimation on confounder + subgroup effects
+x Get simulation working
+x Make PRS scripts
+x Use PRSice R to get best PRS scores
+x load PRS into R
+    x "all_score"
+    x choose 3rd column
+x Incorporate endo-PRS's into PRS
+x Do PRS's do well if knowing the risk group
+    - yes
+x Can ppmx automatically detect the risk group?
+    - Yes, by f1 stat
+x write R part
+    - make cli
+x write python part 
+    x make cli
+x write bash part

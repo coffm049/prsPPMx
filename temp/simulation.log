@@ -1,71 +1,27 @@
-PRSice 2.3.5 (2021-09-20) 
-https://github.com/choishingwan/PRSice
-(C) 2016-2020 Shing Wan (Sam) Choi and Paul F. O'Reilly
-GNU General Public License v3
-If you use PRSice in any published work, please cite:
-Choi SW, O'Reilly PF.
-PRSice-2: Polygenic Risk Score Software for Biobank-Scale Data.
-GigaScience 8, no. 7 (July 1, 2019)
-2024-03-19 20:59:02
-PRSice_linux \
-    --a1 REF \
-    --bar-levels 0.001,0.05,0.1,0.2,0.3,0.4,0.5,1 \
-    --base temp/simulation.PHENO1.glm.linear.filtered \
-    --beta  \
-    --binary-target F \
-    --bp POS \
-    --clump-kb 250kb \
-    --clump-p 1.000000 \
-    --clump-r2 0.100000 \
-    --interval 5e-05 \
-    --keep-ambig  \
-    --lower 5e-08 \
-    --no-regress  \
-    --num-auto 22 \
-    --out temp/simulation \
-    --pvalue P \
-    --score avg \
-    --seed 3515146148 \
-    --snp ID \
-    --stat BETA \
-    --target temp/simulation \
-    --thread 1 \
-    --upper 0.5
+PLINK v2.00a3 SSE4.2 (18 Feb 2022)
+Options in effect:
+  --bfile /home/christian/Research/Integrative/prsPPMx/temp/simulation
+  --out /home/christian/Research/Integrative/prsPPMx/temp/simulation
+  --pca 10
 
-Warning: By selecting --keep-ambig, PRSice assume the base 
-         and target are reporting alleles on the same 
-         strand and will therefore only perform dosage flip 
-         for the ambiguous SNPs. If you are unsure of what 
-         the strand is, then you should not select the 
-         --keep-ambig option 
+Hostname: christian-laptop
+Working directory: /home/christian/Research/Integrative/prsPPMx
+Start time: Mon Apr 29 10:51:04 2024
 
-Initializing Genotype file: temp/simulation (bed) 
+Random number seed: 1714405864
+5859 MiB RAM detected; reserving 2929 MiB for main workspace.
+Using up to 8 compute threads.
+500 samples (0 females, 0 males, 500 ambiguous; 500 founders) loaded from
+/home/christian/Research/Integrative/prsPPMx/temp/simulation.fam.
+712 variants loaded from
+/home/christian/Research/Integrative/prsPPMx/temp/simulation.bim.
+Note: No phenotype data present.
+Calculating allele frequencies... done.
+Constructing GRM: done.
+Extracting eigenvalues and eigenvectors... done.
+--pca: Eigenvectors written to
+/home/christian/Research/Integrative/prsPPMx/temp/simulation.eigenvec , and
+eigenvalues written to
+/home/christian/Research/Integrative/prsPPMx/temp/simulation.eigenval .
 
-Start processing simulation.PHENO1.glm.linear 
-================================================== 
-
-Base file: temp/simulation.PHENO1.glm.linear.filtered 
-Header of file is: 
-
-#CHROM	POS	ID	REF	ALT	A1	TEST	OBS_CT	BETA	SE	T_STAT	P	ERRCODE 
-
-729 variant(s) observed in base file, with: 
-129 NA stat/p-value observed 
-600 total variant(s) included from base file 
-
-Loading Genotype info from target 
-================================================== 
-
-500 people (0 male(s), 0 female(s)) observed 
-500 founder(s) included 
-
-129 variant(s) not found in previous data 
-600 ambiguous variant(s) kept 
-600 variant(s) included 
-
-Start performing clumping 
-
-Number of variant(s) after clumping : 379 
-
-Start calculating the scores 
-
+End time: Mon Apr 29 10:51:04 2024
