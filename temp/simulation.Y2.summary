@@ -1,2 +1,2 @@
 Phenotype	Set	Threshold	PRS.R2	Full.R2	Null.R2	Prevalence	Coefficient	Standard.Error	P	Num_SNP
--	Base	0.00090005	0.21996	0.21996	0	-	-21.8754	1.84598	1.00804e-28	6
+-	Base	1	0.487253	0.487253	0	-	281.12	12.9226	2.48555e-74	246

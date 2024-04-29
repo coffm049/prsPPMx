@@ -31,12 +31,12 @@ loadSim <- function(filepath = "temp/simulation") {
               sample(c(0, 1), size= 1, prob = c(0.25, 0.75))
              ), 
              Z = Z + Confound * 3,
-             PRS0_pc = lm(PRS0 ~ PC1 + Confound)$residuals,
-             PRS1_pc = lm(PRS1 ~ PC1 + Confound)$residuals,
-             PRS2_pc = lm(PRS2 ~ PC1 + Confound)$residuals,
-             PRS3_pc = lm(PRS3 ~ PC1 + Confound)$residuals,
-             PRS4_pc = lm(PRS4 ~ PC1 + Confound)$residuals,
-             Z_pc = lm(Z ~ PC1 + Confound)$residuals)
+             PRS0_pc = lm(PRS0 ~ Confound)$residuals,
+             PRS1_pc = lm(PRS1 ~ Confound)$residuals,
+             PRS2_pc = lm(PRS2 ~ Confound)$residuals,
+             PRS3_pc = lm(PRS3 ~ Confound)$residuals,
+             PRS4_pc = lm(PRS4 ~ Confound)$residuals,
+             Z_pc = lm(Z ~ Confound)$residuals)
   return(df)
 }
 
@@ -68,8 +68,8 @@ ppmxsummary <- function(mod, df, proj=F, ...) {
 
 runSims <- function(meanModel = 1, M=1e-20, similarity_function = 1, draws = 2000, burn = 500, thin = 10, out="temp/simulation"){
     df <- loadSim(filepath = out)
-    m1 = ppmSuite::gaussian_ppmx(y = df$Z, X = df[c("PRS0", "PRS1", "PRS2", "PRS3", "PRS4", "PC1", "Confound")], draws = draws, burn = burn, thin = thin, M = M, meanModel= meanModel,similarity_function=similarity_function )
-    m2 = ppmSuite::gaussian_ppmx(y = df$Z_pc, X = df[c("PRS0_pc", "PRS1_pc", "PRS2_pc","PRS3_pc", "PRS4_pc")], meanModel = meanModel, M = M, similarity_function = similarity_function, draws = draws, burn = burn, thin = thin)
+    m1 = ppmSuite::gaussian_ppmx(y = df$Z, X = df[c("PRS0", "PRS1", "PRS2", "PRS3", "PRS4", "Confound", "Xc")], draws = draws, burn = burn, thin = thin, M = M, meanModel= meanModel,similarity_function=similarity_function )
+    m2 = ppmSuite::gaussian_ppmx(y = df$Z_pc, X = df[c("PRS0_pc", "PRS1_pc", "PRS2_pc","PRS3_pc", "PRS4_pc", "Xc")], meanModel = meanModel, M = M, similarity_function = similarity_function, draws = draws, burn = burn, thin = thin)
     m1 <- ppmxsummary(m1, df,proj = F, x ="PC1", y= "Z")
     m2 <- ppmxsummary(m2, df, x ="PRS1_pc", y= "Z_pc", proj =T)
     results <- rbind(m1, m2)

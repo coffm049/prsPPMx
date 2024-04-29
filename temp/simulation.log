@@ -6,14 +6,14 @@ Options in effect:
 
 Hostname: christian-laptop
 Working directory: /home/christian/Research/Integrative/prsPPMx
-Start time: Mon Apr 29 11:00:45 2024
+Start time: Mon Apr 29 14:33:39 2024
 
-Random number seed: 1714406445
+Random number seed: 1714419219
 5859 MiB RAM detected; reserving 2929 MiB for main workspace.
 Using up to 8 compute threads.
 500 samples (0 females, 0 males, 500 ambiguous; 500 founders) loaded from
 /home/christian/Research/Integrative/prsPPMx/temp/simulation.fam.
-710 variants loaded from
+490 variants loaded from
 /home/christian/Research/Integrative/prsPPMx/temp/simulation.bim.
 Note: No phenotype data present.
 Calculating allele frequencies... done.
@@ -24,4 +24,4 @@ Extracting eigenvalues and eigenvectors... done.
 eigenvalues written to
 /home/christian/Research/Integrative/prsPPMx/temp/simulation.eigenval .
 
-End time: Mon Apr 29 11:00:45 2024
+End time: Mon Apr 29 14:33:39 2024

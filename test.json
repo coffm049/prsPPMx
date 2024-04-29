@@ -1,7 +1,7 @@
 {
   "nsubjects" : 500,
   "nSNPs" : 1000,
-  "nclusts" : 2,
+  "nclusts" : 1,
   "nphenos" : 5,
   "nsites" : 1,
   "shared" : 0.5,
@@ -16,6 +16,8 @@
   "riskGroups" : true,
   "confoundee" : null,
   "linearCombo" : true,
-  "siteEffects" : true,
-  "prefix" : "/home/christian/Research/Integrative/prsPPMx/temp/simulation"
+  "siteEffects" : false,
+  "prefix" : "/home/christian/Research/Integrative/prsPPMx/temp/simulation",
+  "dpCgivenRisk" : 0.25,
+  "Covariate" : true
 }

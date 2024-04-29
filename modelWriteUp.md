@@ -111,3 +111,18 @@ Fitting process outlline, residualize out site/scanner effects first then fit PP
 | Detect meaningful clustering in a data driven way |  |
 
 
+
+
+# with variable selection
+
+$$
+  p(\rho_n = \{S_1,...,S_K\} | \gamma, X) \propto \prod_{j=1}^K c(S_j)(\prod_{l=1}^q g(x_{jl}^*)^{\gamma_{jl}}) \\
+$$
+
+where 
+
+$$
+  g(x^*_j) = \frac{g(x^*_j)}{\prod _{i\in S_j} q(x_i | \tilde ξ)}
+$$
+
+in order to avoid no covariate selection since if $g() <1$ the model would favor no selection
