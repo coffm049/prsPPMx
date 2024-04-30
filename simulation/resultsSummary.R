@@ -1,3 +1,4 @@
+options(tidyverse.quiet = TRUE, readr.show_col_types = FALSE)
 library(tidyverse)
 library(janitor)
 

@@ -1,3 +1,4 @@
+options(tidyverse.quiet = TRUE, readr.show_col_types = FALSE)
 library(tidyverse)
 
 
@@ -31,17 +32,24 @@ loadSim <- function(filepath = "temp/simulation") {
               sample(c(0, 1), size= 1, prob = c(0.25, 0.75))
              ), 
              Z = Z + Confound * 3,
-             PRS0_pc = lm(PRS0 ~ Confound)$residuals,
-             PRS1_pc = lm(PRS1 ~ Confound)$residuals,
-             PRS2_pc = lm(PRS2 ~ Confound)$residuals,
-             PRS3_pc = lm(PRS3 ~ Confound)$residuals,
-             PRS4_pc = lm(PRS4 ~ Confound)$residuals,
-             Z_pc = lm(Z ~ Confound)$residuals)
+             PRS0_c = lm(PRS0 ~ Confound)$residuals,
+             PRS1_c = lm(PRS1 ~ Confound)$residuals,
+             PRS2_c = lm(PRS2 ~ Confound)$residuals,
+             PRS3_c = lm(PRS3 ~ Confound)$residuals,
+             PRS4_c = lm(PRS4 ~ Confound)$residuals,
+             Z_c = lm(Z ~ Confound)$residuals,
+             PRS0_xc = lm(PRS0 ~ Xc + Confound)$residuals,
+             PRS1_xc = lm(PRS1 ~ Xc + Confound)$residuals,
+             PRS2_xc = lm(PRS2 ~ Xc + Confound)$residuals,
+             PRS3_xc = lm(PRS3 ~ Xc + Confound)$residuals,
+             PRS4_xc = lm(PRS4 ~ Xc + Confound)$residuals,
+             Z_xc = lm(Z ~ Xc + Confound)$residuals,
+             )
   return(df)
 }
 
 
-ppmxsummary <- function(mod, df, proj=F, ...) {
+ppmxsummary <- function(mod, df, proj="False", ...) {
   
   llike <- rowSums(log(mod$like))
   mle <- which(max(llike) == llike)
@@ -58,8 +66,11 @@ ppmxsummary <- function(mod, df, proj=F, ...) {
   # print(table(df[c("label", "riskGroups", "subj_ancestries")]))
 
   #print(paste("f1 : ", Metrics::f1(df$riskGroups, df$label)))
-  R2 <- ifelse(proj == F, summary(lm(Z ~ predicted, data = df))$r.squared, 
-      summary(lm(Z_pc ~ predicted, data = df))$r.squared)
+  R2 <- case_when(
+    proj == "False" ~ summary(lm(Z ~ predicted, data = df))$r.squared,
+    proj == "Confound" ~ summary(lm(Z_c ~ predicted, data = df))$r.squared,
+    proj == "C+Xc" ~ summary(lm(Z_xc ~ predicted, data = df))$r.squared
+    )
   #print(paste("R2 : ", R2))
 
   return(data.frame("f1" = Metrics::f1(df$riskGroups, df$label), "R2" = R2, "proj" = proj)) 
@@ -69,10 +80,14 @@ ppmxsummary <- function(mod, df, proj=F, ...) {
 runSims <- function(meanModel = 1, M=1e-20, similarity_function = 1, draws = 2000, burn = 500, thin = 10, out="temp/simulation"){
     df <- loadSim(filepath = out)
     m1 = ppmSuite::gaussian_ppmx(y = df$Z, X = df[c("PRS0", "PRS1", "PRS2", "PRS3", "PRS4", "Confound", "Xc")], draws = draws, burn = burn, thin = thin, M = M, meanModel= meanModel,similarity_function=similarity_function )
-    m2 = ppmSuite::gaussian_ppmx(y = df$Z_pc, X = df[c("PRS0_pc", "PRS1_pc", "PRS2_pc","PRS3_pc", "PRS4_pc", "Xc")], meanModel = meanModel, M = M, similarity_function = similarity_function, draws = draws, burn = burn, thin = thin)
-    m1 <- ppmxsummary(m1, df,proj = F, x ="PC1", y= "Z")
-    m2 <- ppmxsummary(m2, df, x ="PRS1_pc", y= "Z_pc", proj =T)
-    results <- rbind(m1, m2)
+    m2 = ppmSuite::gaussian_ppmx(y = df$Z_c, X = df[c("PRS0_c", "PRS1_c", "PRS2_c","PRS3_c", "PRS4_c", "Xc")], meanModel = meanModel, M = M, similarity_function = similarity_function, draws = draws, burn = burn, thin = thin)
+    m3 = ppmSuite::gaussian_ppmx(y = df$Z_xc, X = df[c("PRS0_xc", "PRS1_xc", "PRS2_xc","PRS3_xc", "PRS4_xc")], meanModel = meanModel, M = M, similarity_function = similarity_function, draws = draws, burn = burn, thin = thin)
+
+    m1 <- ppmxsummary(m1, df,proj = "False", x ="PC1", y= "Z")
+    m2 <- ppmxsummary(m2, df, x ="PRS1_c", y= "Z_c", proj = "Confound")
+    m3 <- ppmxsummary(m3, df, x ="PRS1_xc", y= "Z_xc", proj ="C+Xc")
+
+    results <- rbind(m1, m2, m3)
     write.table(results, file = paste0(out, ".results"), sep = "\t", row.names = F, append = T)
 }
 
