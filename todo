@@ -6,23 +6,29 @@ x load PRS into R
     x choose 3rd column
 x Incorporate endo-PRS's into PRS
 x Do PRS's do well if knowing the risk group
-    - yes
+    x yes
 x Can ppmx automatically detect the risk group?
-    - Yes, by f1 stat
+    x Yes, by f1 stat
 x write R part
-    - make cli
+    x make cli
 x write python part 
     x make cli
 x write bash part
 x Run production level simulation on local comp
-- run full scale simulation on MSI
+x run full scale simulation on MSI
 x Explore different statistic to compare labeling?
 x Remove ethnicities
 x Add confounding before PRS
-    x- BY VARYING FROM 0.25/0.75, 0.90/0.1, etc, 0.5/0.5, 0.4/0.6 for independence
+    x BY VARYING FROM 0.25/0.75, 0.90/0.1, etc, 0.5/0.5, 0.4/0.6 for independence
 x add additional covariates that are indpeendent and don't contirbute to clusters
     x this is like adding noise
     - Also, test leveL of noise
-        
+
+- Make a nonlinearirty in the outcome based on the endo phneotyps
+- simulate the endophentypes with the risk groups
+- different PRS slope for the gorup
     
+- simualte an interaction between the risk group and the SNP effects for the endophenotypes
+
+
 
