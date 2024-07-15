@@ -1,0 +1,202 @@
+---
+title: "ppmx with tuning"
+format: pdf
+execute: 
+  cache: true
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(ppmSuite)
+
+jaccard <- function(a, b) {
+  intersection <- length(intersect(a, b))
+  union <- length(a) + length(b) - intersection
+  return(intersection / union)
+}
+
+
+ppmxSummary <- function(model, df, plot = FALSE, verbose = FALSE) {
+  llike <- rowSums(log(model$like))
+  mle <- which(max(llike) == llike)
+  df$predicted <- model$fitted.values[mle, ]
+  df$label <- model$Si[mle, ]
+  if (plot) {
+    # table(df$label)
+    p <- df %>%
+      ggplot(aes(x = Uninf1, y = Y, col = factor(label))) +
+      geom_point()
+    print(p)
+  }
+  if (verbose) {
+    print(paste0("f1:", Metrics::f1(df$cluster, df$label)))
+    print(paste0("Acc:", Metrics::accuracy(df$cluster, df$label)))
+    print(paste0("Recall:", Metrics::recall(df$cluster, df$label)))
+    print(paste0("R.Index:", fossil::rand.index(df$cluster, df$label)))
+    print(paste0("Precision:", Metrics::precision(df$cluster, df$label)))
+    print(paste0("Jaccard:", jaccard(df$cluster, df$label)))
+  }
+  return(Metrics::f1(df$cluster, df$label))
+}
+```
+
+
+# Simulation Setup
+```{r simSetup}
+# Controls
+Nobs <- 1000
+Minformative <- 2
+Muninformative <- 10 
+
+# simulate data
+
+# Seed and empty dataframe
+df <- tibble("row" = 1:Nobs) %>%
+  mutate("cluster" = rep(0:1, Nobs/2))
+
+
+for (i in 1:Minformative) {
+  df <- df %>%
+    mutate(
+      !!paste0("Inf", i) := rnorm(n=Nobs, mean = cluster, sd = 0.1),
+    )
+}
+for (i in 1:Muninformative) {
+  df <- df %>%
+    mutate(
+      !!paste0("Uninf", i) := rnorm(n = Nobs, mean = 0, sd = 0.1)
+    )
+}
+df <- df %>% 
+  mutate(
+    # add an interaction term between Inf varaibles and  Risk group that affects Y
+    Y = (cluster) + rowSums(select(., starts_with("Uninf"))) + rnorm(Nobs),
+  ) 
+
+df %>%
+  mutate(
+    combo = rowSums(select(., starts_with("Inf")))
+  ) %>%
+  ggplot(aes(x = combo, y = Y, col = cluster)) + 
+  geom_point()
+df %>%
+  ggplot(aes(x = Uninf1, y = Y, col = cluster)) + 
+  geom_point()
+
+# create training and testing sets keeping riskGroups balanced
+train <- df %>%
+  group_by(cluster) %>%
+  sample_frac(0.8) %>%
+  ungroup()
+
+test <- df %>%
+  anti_join(train)
+
+
+
+# m0,
+# s20 - variance of x
+# v2 - small favors partitions with similar X
+# skip - k0, nu0, a0
+# alpha - weight associated with cluster-variance and Gower
+
+# Create a grid of simParms to test
+simParms <- expand.grid(
+  m0 = 0.5,
+  s20 = c(5, 15, 25),
+  v2 = c(0.1, 1.0),
+  k0 = 1, nu0 = 1, a0 = 1,
+  alpha = 0.1,
+  M= c(1/5, 1)
+)
+```
+
+# Model tuning and fitting
+## Model 1
+```{r modelTuning, output=FALSE}
+# test gaussian_ppmx over this set of simParms using f1 stat
+paramSelect <- simParms %>%
+  rowwise() %>%
+  mutate(
+    simParms = list(c(m0, s20, v2, k0, nu0, a0, alpha)),
+    f1 = ppmxSummary(gaussian_ppmx(
+      y = train$Y,
+      X = train[c(paste0("Inf", 1:Minformative), paste0("Uninf", 1:Muninformative))], 
+      draws = 150, burn = 50, thin = 5, M = M, meanModel = 2, similarity_function = 1, verbose = FALSE, simParms = simParms, consim = 2), train)
+  ) %>%
+  # turn off rowwise
+  ungroup() %>%
+  slice(which.max(f1)) %>%
+  pull(simParms) %>%
+  as.data.frame() %>%
+  pull(1)
+
+# Fit with best tuning
+mod1 <- ppmSuite::gaussian_ppmx(y = test$Y, X = test[c(paste0("Inf", 1:Minformative), paste0("Uninf", 1:Muninformative))], draws = 500, burn = 50, thin = 5, M = tail(paramSelect, n=1), meanModel = 2, similarity_function = 1, verbose = FALSE, simParms = head(paramSelect, 7), consim = 2)
+```
+
+## Model 2
+```{r model2, output=FALSE}
+# tune model with only informative variables
+paramSelect3 <- simParms %>%
+  rowwise() %>%
+  mutate(
+    simParms = list(c(m0, s20, v2, k0, nu0, a0, alpha)),
+    f1 = ppmxSummary(gaussian_ppmx(y = train$Y, X = train[paste0("Inf", 1:Minformative) ], draws = 150, burn = 50, thin = 5, M = M, meanModel = 2, similarity_function = 1, verbose = FALSE, simParms = simParms, consim = 2), train)
+  ) %>%
+  # turn off rowwise
+  ungroup() %>%
+  slice(which.max(f1)) %>%
+  pull(simParms) %>%
+  as.data.frame() %>%
+  pull(1)
+mod3 <- ppmSuite::gaussian_ppmx(y = test$Y, X = test[paste0("Inf", 1:Minformative)], draws = 500, burn = 50, thin = 5, M = tail(paramSelect3, n=1), meanModel = 2, similarity_function = 1, verbose = FALSE, simParms = head(paramSelect3, n=7), consim = 2, Xpred = )
+```
+
+## Model 3
+```{r model3, output=FALSE}
+# make a string summing all 1:Muninformative variables
+RHS <- paste0("Uninf", 1:Minformative, collapse = " + ")
+form <- as.formula(paste("Y ~", RHS))
+
+# Train model after projecting away Uninformative variables
+train2 <- train %>%
+  # residualize out the Uninf varaibles
+  mutate(
+    Y = lm(form, data = .)$residuals
+  )
+test2 <- test %>%
+  # residualize out the Uninf varaibles
+  mutate(
+    Y = lm(form, data = .)$residuals
+  )
+
+paramSelect2 <- simParms %>%
+  rowwise() %>%
+  mutate(
+    simParms = list(c(m0, s20, v2, k0, nu0, a0, alpha, M)),
+    f1 = ppmxSummary(gaussian_ppmx(
+      y = train2$Y,
+      X = train2[paste0("Inf", 1:Minformative)], draws = 150, burn = 50, thin = 5, M = M, meanModel = 2, similarity_function = 1, verbose = FALSE, simParms = simParms, consim = 2
+    ), train2, plot=FALSE)
+  ) %>%
+  # turn off rowwise
+  ungroup() %>%
+  slice(which.max(f1)) %>%
+  pull(simParms) %>%
+  as.data.frame() %>%
+  pull(1)
+
+mod2 <- ppmSuite::gaussian_ppmx(y = test2$Y, X = test2[paste0("Inf", 1:Minformative)], draws = 500, burn = 50, thin = 5, M = tail(paramSelect2, n=1), meanModel = 2, similarity_function = 1, verbose = FALSE, simParms = head(paramSelect2, n=7), consim = 2)
+```
+
+# Model Evaluation
+```{r modelEval}
+
+ppmxSummary(mod1, test, plot = T, verbose= T)
+ppmxSummary(mod2, test, plot = T, verbose= T)
+ppmxSummary(mod3, test, plot = T, verbose= T)
+df %>%
+  ggplot(aes(x = pRisk, y = Y, col = factor(riskGroups))) +
+  geom_point()
+```
